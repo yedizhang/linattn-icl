@@ -3,10 +3,10 @@ import torch.nn as nn
 
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, output_dim, hid=128):
+    def __init__(self, input_dim, output_dim, hid=1):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_dim+output_dim, hid, bias=False)
-        self.fc2 = nn.Linear(hid, input_dim+output_dim, bias=False)
+        self.fc1 = nn.Linear(input_dim**2, hid, bias=False)
+        self.fc2 = nn.Linear(hid, output_dim, bias=False)
         self._init_weights()
 
     def forward(self, x):
@@ -14,7 +14,7 @@ class MLP(nn.Module):
         fc = self.fc2(fc)
         return fc
 
-    def _init_weights(self, gamma=1e-3):
+    def _init_weights(self, gamma=1e-4):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, mean=0, std=gamma)
@@ -93,7 +93,7 @@ class LinAttention(nn.Module):
         return output
 
 
-    def _init_weights(self, gamma=1e-6):
+    def _init_weights(self, gamma=1e-4):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 if m.weight.shape[0] == self.hid:
@@ -101,3 +101,29 @@ class LinAttention(nn.Module):
                     nn.init.normal_(m.weight, mean=0, std=(gamma/(self.input_dim+self.output_dim))**0.5)
                 else:
                     nn.init.normal_(m.weight, mean=0, std=gamma)
+
+
+class LinAttention_KQ(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(LinAttention_KQ, self).__init__()
+        self.KQ = nn.Linear(input_dim+output_dim, input_dim+output_dim, bias=False)
+        self.value = nn.Linear(input_dim+output_dim, input_dim+output_dim, bias=False)
+
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+        self._init_weights()
+
+    def forward(self, x):
+        # x: (num_samples, seq_len, input_dim) 
+        kq = self.KQ(x)     
+        V = self.value(x)  # (batch_size, seq_len, output_dim)
+        attention_scores = torch.bmm(x, kq.transpose(1, 2))
+        output = torch.bmm(attention_scores, V)  # (batch_size, seq_len, output_dim)
+        return output
+
+
+    def _init_weights(self, gamma=1e-6):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, mean=0, std=gamma)

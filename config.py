@@ -1,0 +1,21 @@
+import argparse
+
+def config():
+    parser = argparse.ArgumentParser()
+    # training
+    parser.add_argument("--epoch", type=int, default=4001, help='number of epochs')
+    parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
+
+    # param for data set
+    parser.add_argument("--trainset_size", type=int, default=1000, help='number of training samples')
+    parser.add_argument("--testset_size", type=int, default=5000, help='number of training samples')
+    parser.add_argument("--seq_len", type=int, default=20, help='sequence length')
+    parser.add_argument("--in_dim", type=int, default=5, help='dimension of x')
+    parser.add_argument("--out_dim", type=int, default=1, help='dimension of y')
+    parser.add_argument("--cubic_feat", action="store_true", help='map X to cubic features z')
+    
+    # param for network
+    parser.add_argument("--model", type=str, default='attn_KQ', choices={'attn', 'attn_KQ', 'transformer', 'mlp'}, help='model type')
+
+    print(parser.parse_args(), '\n')
+    return parser
