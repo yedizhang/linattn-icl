@@ -12,6 +12,7 @@ def config():
     parser.add_argument("--seq_len", type=int, default=20, help='sequence length')
     parser.add_argument("--in_dim", type=int, default=5, help='dimension of x')
     parser.add_argument("--out_dim", type=int, default=1, help='dimension of y')
+    parser.add_argument("--head_num", type=int, default=1, help='number of heads')
     parser.add_argument("--cubic_feat", action="store_true", help='map X to cubic features z')
     
     # param for network

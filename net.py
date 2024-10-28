@@ -104,22 +104,32 @@ class LinAttention(nn.Module):
 
 
 class LinAttention_KQ(nn.Module):
-    def __init__(self, in_dim, out_dim):
-        super(LinAttention_KQ, self).__init__()
-        self.KQ = nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-        self.value = nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-
+    def __init__(self, in_dim, out_dim, head_num=1):
+        super(LinAttention_KQ, self).__init__()       
+        self.KQ = nn.ModuleList([
+            nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
+            for _ in range(head_num)
+        ])
+        self.value = nn.ModuleList([
+            nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
+            for _ in range(head_num)
+        ])
         self.in_dim = in_dim
         self.out_dim = out_dim
-
+        self.head_num = head_num
         self._init_weights()
 
+
     def forward(self, x):
-        # x: (num_samples, seq_len, in_dim) 
-        kq = self.KQ(x)     
-        V = self.value(x)  # (batch_size, seq_len, out_dim)
-        attention_scores = torch.bmm(x, kq.transpose(1, 2))
-        output = torch.bmm(attention_scores, V)  # (batch_size, seq_len, out_dim)
+        # x: (batch_size, seq_len, in_dim+out_dim)        
+        multihead_output = []
+        for i in range(self.head_num):
+            kq = self.KQ[i](x)  # (batch_size, seq_len, in_dim+out_dim)
+            V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
+            attention_scores = torch.bmm(x, kq.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+            head_output = torch.bmm(attention_scores, V)
+            multihead_output.append(head_output)
+        output = sum(multihead_output)  # sum outputs from all heads (batch_size, seq_len, head_dim)
         return output
 
 
