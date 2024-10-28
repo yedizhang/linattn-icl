@@ -24,24 +24,24 @@ def creat_network(args):
     return model
 
 
-def gen_data_(num_samples, seq_len, input_dim, output_dim, w, mode='bursty', cubic_feat=False):
-    x = torch.normal(0, 1, size=(num_samples, seq_len, input_dim))
+def gen_data_(num_samples, seq_len, in_dim, out_dim, w, mode='bursty', cubic_feat=False):
+    x = torch.normal(0, 1, size=(num_samples, seq_len, in_dim))  # white gaussian
     if mode in ['bursty', 'icl']:
         if mode == 'bursty':
             y = torch.matmul(x, w)
         elif mode == 'icl':
-            w_ic = torch.randn(num_samples, input_dim, output_dim)
+            w_ic = torch.randn(num_samples, in_dim, out_dim)
             y = torch.einsum('nli,nio->nlo', x, w_ic)
     elif mode == 'iwl':
-        y = torch.randn(num_samples, seq_len, output_dim)
+        y = torch.randn(num_samples, seq_len, out_dim)
         y[:,-1,:] = torch.matmul(x[:,-1,:], w)
-    seq = torch.cat((x, y), dim=2)  # shape [num_samples, seq_len, input_dim+output_dim]
+    seq = torch.cat((x, y), dim=2)  # shape [num_samples, seq_len, in_dim+out_dim]
     targets = seq.clone()
-    seq[:,[-1],input_dim:] = 0
+    seq[:,[-1],in_dim:] = 0
     if cubic_feat:
         XX = torch.bmm(seq.transpose(1, 2), seq)
-        beta_c = XX[:,:input_dim,[-1]]
-        x_q = seq[:,[-1],:input_dim]
+        beta_c = XX[:,:in_dim,[-1]]
+        x_q = seq[:,[-1],:in_dim]
         X_feat = torch.bmm(beta_c, x_q)
         seq = torch.flatten(X_feat, start_dim=1)
     return seq, targets
@@ -62,8 +62,8 @@ def gen_dataset(args):
             "y_icl": y_icl.to(device)}
 
 
-def mse(y, y_hat, input_dim):
-    return F.mse_loss(y[:,[-1],input_dim:], y_hat[:,[-1],input_dim:]).cpu().detach().numpy()
+def mse(y, y_hat, in_dim):
+    return F.mse_loss(y[:,[-1],in_dim:], y_hat[:,[-1],in_dim:]).cpu().detach().numpy()
 
 
 def vis_weight(args, params):
@@ -92,10 +92,15 @@ def vis_weight(args, params):
 
 
 def vis_loss(results):
+    plt.rcParams['axes.spines.right'] = False
+    plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
-    plt.plot(results['Eg_iwl'], c='b')
-    plt.plot(results['Eg_icl'], c='r')
-    plt.plot(results['Ls'], c='k')
+    # plt.plot(results['Eg_iwl'], c='b')
+    # plt.plot(results['Eg_icl'], c='r')
+    plt.plot(results['Ls'], c='k', lw=2)
+    plt.xlim([0, len(results['Ls'])])
+    plt.ylim([0, np.max(results['Ls'])+0.2])
+    plt.tight_layout()
     plt.show()
 
 
