@@ -13,10 +13,10 @@ torch.manual_seed(0)
 
 
 def creat_network(args):
-    if args.model == 'attn':
-        model = LinAttention(args.in_dim, args.out_dim).to(device)
-    elif args.model == 'attn_KQ':
-        model = LinAttention_KQ(args.in_dim, args.out_dim).to(device)
+    if args.model == 'attn_KQ':
+        model = LinAttention_KQ(args.in_dim, args.out_dim, args.head_num).to(device)
+    elif args.model == 'attn':
+        model = LinAttention(args.in_dim, args.out_dim, args.head_num, args.KQ_dim).to(device)
     elif args.model == 'transformer':
         model = LinTransformer(args.in_dim, args.out_dim).to(device)
     elif args.model == 'mlp':
@@ -95,8 +95,8 @@ def vis_loss(results):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
-    # plt.plot(results['Eg_iwl'], c='b')
-    # plt.plot(results['Eg_icl'], c='r')
+    plt.plot(results['Eg_iwl'], c='b')
+    plt.plot(results['Eg_icl'], c='r')
     plt.plot(results['Ls'], c='k', lw=2)
     plt.xlim([0, len(results['Ls'])])
     plt.ylim([0, np.max(results['Ls'])+0.2])
