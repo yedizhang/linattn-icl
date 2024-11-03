@@ -15,12 +15,22 @@ def mse(y, y_hat, in_dim):
 
 
 def vis_matrix(M):
-    thresh = np.max(np.abs(M))
-    plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
-    plt.colorbar()
+    if not isinstance(M, list):
+        thresh = np.max(np.abs(M))
+        plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
+        plt.colorbar()
+    else:
+        num = len(M)
+        fig, ax = plt.subplots(nrows=1, ncols=num)
+        for n in range(num):
+            mat = M[n]
+            thresh = np.max(np.abs(mat))
+            im = ax[n].imshow(mat, cmap='RdBu', vmin=-thresh, vmax=thresh)
+            fig.colorbar(im, ax=ax[n])
+            ax[n].set_xticks([])
+            ax[n].set_yticks([])
     plt.tight_layout()
     plt.show()
-
 
 def vis_weight(args, params):
     W = [param.data.cpu().detach().numpy() for param in params]
@@ -37,20 +47,7 @@ def vis_weight(args, params):
     elif args.model == 'mlp':
         KQ = W[0].reshape(args.in_dim, args.in_dim)
         V = W[1]
-    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
-    thresh_KQ = np.max(np.abs(KQ))
-    thresh_V = np.max(np.abs(V))
-    im0 = ax[0].imshow(V, cmap='RdBu', vmin=-thresh_V, vmax=thresh_V)
-    im1 = ax[1].imshow(KQ, cmap='RdBu', vmin=-thresh_KQ, vmax=thresh_KQ)
-    fig.colorbar(im0, ax=ax[0])
-    fig.colorbar(im1, ax=ax[1])
-    ax[0].set_title('$W_V$')
-    ax[1].set_title('$W_{KQ}=W_K^T W_Q$')
-    for a in ax:
-        a.set_xticks([])
-        a.set_yticks([])
-    plt.tight_layout()
-    plt.show()
+    vis_matrix([V,KQ])
 
 
 def vis_loss(results):
