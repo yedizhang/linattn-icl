@@ -24,12 +24,11 @@ def creat_network(args):
 
 def gen_data_(num_samples, seq_len, in_dim, out_dim, w, mode='bursty', cubic_feat=False):
     x = torch.normal(0, 1, size=(num_samples, seq_len, in_dim))  # white gaussian
-    if mode in ['bursty', 'icl']:
-        if mode == 'bursty':
-            y = torch.matmul(x, w)
-        elif mode == 'icl':
-            w_ic = torch.randn(num_samples, in_dim, out_dim)
-            y = torch.einsum('nli,nio->nlo', x, w_ic)
+    if mode == 'bursty':
+        y = torch.matmul(x, w)
+    elif mode == 'icl':
+        w_ic = torch.randn(num_samples, in_dim, out_dim)
+        y = torch.einsum('nli,nio->nlo', x, w_ic)
     elif mode == 'iwl':
         y = torch.randn(num_samples, seq_len, out_dim)
         y[:,-1,:] = torch.matmul(x[:,-1,:], w)
