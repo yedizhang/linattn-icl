@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from scipy.stats import invwishart
 from net import *
 from utils import *
 from config import *
@@ -22,12 +23,15 @@ def creat_network(args):
     return model
 
 
-def gen_data_(num_samples, seq_len, in_dim, out_dim, w, mode='bursty', cubic_feat=False):
-    x = torch.normal(0, 1, size=(num_samples, seq_len, in_dim))  # white gaussian
+def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubic_feat=False):
+    x = np.random.multivariate_normal(np.zeros(in_dim), cov, size=num_samples*seq_len)
+    x = torch.tensor(np.reshape(x, (num_samples, seq_len, in_dim))).float()
+    x = x - torch.mean(x, dim=0, keepdim=True)
     if mode == 'bursty':
         y = torch.matmul(x, w)
     elif mode == 'icl':
-        w_ic = torch.randn(num_samples, in_dim, out_dim)
+        w_ic = torch.normal(0, 1, size=(num_samples, in_dim, out_dim))
+        w_ic = w_ic - torch.mean(w_ic, dim=0, keepdim=True)
         y = torch.einsum('nli,nio->nlo', x, w_ic)
     elif mode == 'iwl':
         y = torch.randn(num_samples, seq_len, out_dim)
@@ -47,12 +51,20 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, w, mode='bursty', cubic_fea
 
 def gen_dataset(args):
     data = {}
-    w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
-    data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, w, 'icl', args.cubic_feat)
+    if args.rand_cov:
+        w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
+        cov = invwishart.rvs(df=args.in_dim+2, scale=np.eye(args.in_dim))
+    else:
+        w = torch.ones(args.in_dim, args.out_dim)
+        cov = np.eye(args.in_dim)
+    cov = cov / np.trace(cov)
+    data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     if args.testset_size != 0:
-        data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, w, 'iwl', args.cubic_feat)
-        data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, w, 'icl', args.cubic_feat)
+        data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'iwl', args.cubic_feat)
+        data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     print("Trainset shape:", data['x'].shape, data['y'].shape)
+    print("Input cov eigvals:", np.linalg.eigvals(cov))
+    vis_matrix(cov)
     return data
 
 

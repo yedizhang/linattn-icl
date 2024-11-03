@@ -9,6 +9,7 @@ def config():
     # param for data set
     parser.add_argument("--trainset_size", type=int, default=1000, help='number of training samples')
     parser.add_argument("--testset_size", type=int, default=5000, help='number of training samples')
+    parser.add_argument("--rand_cov", action="store_true", help='use a random input covariance matrix (sampled from inverse Wishart distribution)')
     parser.add_argument("--seq_len", type=int, default=20, help='sequence length')
     parser.add_argument("--in_dim", type=int, default=5, help='dimension of x')
     parser.add_argument("--out_dim", type=int, default=1, help='dimension of y')
