@@ -1,0 +1,69 @@
+import numpy as np
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+plt.rc('font', family="Arial")
+plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams['font.size'] = '14'
+
+
+def mse(y, y_hat, in_dim):
+    if y.dim() == 3:
+        y = y[:,-1,in_dim:]
+    if y_hat.dim() == 3:
+        y_hat = y_hat[:,-1,in_dim:]
+    return F.mse_loss(y, y_hat).cpu().detach().numpy()
+
+
+def vis_matrix(M):
+    thresh = np.max(np.abs(M))
+    plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
+    plt.colorbar()
+    plt.tight_layout()
+    plt.show()
+
+
+def vis_weight(args, params):
+    W = [param.data.cpu().detach().numpy() for param in params]
+    if args.model == 'attn':
+        if args.head_num == 1:
+            KQ = W[0].T @ W[args.head_num]
+            V = W[-1]
+        else:
+            V = np.sum(W[2*args.head_num:], axis=0)
+            KQ = np.array(W[:args.head_num]).squeeze().T @ np.array(W[args.head_num:2*args.head_num]).squeeze()
+    elif args.model == 'attn_KQ':
+        KQ = W[0].T
+        V = W[-1]
+    elif args.model == 'mlp':
+        KQ = W[0].reshape(args.in_dim, args.in_dim)
+        V = W[1]
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
+    thresh_KQ = np.max(np.abs(KQ))
+    thresh_V = np.max(np.abs(V))
+    im0 = ax[0].imshow(V, cmap='RdBu', vmin=-thresh_V, vmax=thresh_V)
+    im1 = ax[1].imshow(KQ, cmap='RdBu', vmin=-thresh_KQ, vmax=thresh_KQ)
+    fig.colorbar(im0, ax=ax[0])
+    fig.colorbar(im1, ax=ax[1])
+    ax[0].set_title('$W_V$')
+    ax[1].set_title('$W_{KQ}=W_K^T W_Q$')
+    for a in ax:
+        a.set_xticks([])
+        a.set_yticks([])
+    plt.tight_layout()
+    plt.show()
+
+
+def vis_loss(results):
+    plt.rcParams['axes.spines.right'] = False
+    plt.rcParams['axes.spines.top'] = False
+    plt.figure(figsize=(4, 3))
+    if results['Eg_iwl'][0] != 0:
+        plt.plot(results['Eg_iwl'], c='b')
+        plt.plot(results['Eg_icl'], c='r')
+    plt.plot(results['Ls'], c='k', lw=2)
+    plt.xlim([0, len(results['Ls'])])
+    plt.ylim([0, np.max(results['Ls'])+0.1])
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.tight_layout(pad=0.5)
+    plt.show()
