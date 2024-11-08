@@ -14,7 +14,7 @@ def mse(y, y_hat, in_dim):
     return F.mse_loss(y, y_hat).cpu().detach().numpy()
 
 
-def vis_matrix(M):
+def vis_matrix(M, t=0):
     if not isinstance(M, list):
         thresh = np.max(np.abs(M))
         plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
@@ -29,10 +29,11 @@ def vis_matrix(M):
             fig.colorbar(im, ax=ax[n])
             ax[n].set_xticks([])
             ax[n].set_yticks([])
+        fig.suptitle(t)
     plt.tight_layout()
     plt.show()
 
-def vis_weight(args, params):
+def vis_weight(args, params, t=0):
     W = [param.data.cpu().detach().numpy() for param in params]
     if args.model == 'attn':
         if args.head_num == 1:
@@ -41,16 +42,17 @@ def vis_weight(args, params):
         else:
             V = np.sum(W[2*args.head_num:], axis=0)
             KQ = np.array(W[:args.head_num]).squeeze().T @ np.array(W[args.head_num:2*args.head_num]).squeeze()
+        vis_matrix([np.array(W[:args.head_num]).squeeze(), np.array(W[args.head_num:2*args.head_num]).squeeze()], t)
     elif args.model == 'attn_KQ':
         KQ = W[0].T
         V = W[-1]
     elif args.model == 'mlp':
         KQ = W[0].reshape(args.in_dim, args.in_dim)
         V = W[1]
-    vis_matrix([V,KQ])
+    vis_matrix([V,KQ], t)
 
 
-def vis_loss(results):
+def vis_loss(args, results):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
@@ -64,3 +66,4 @@ def vis_loss(results):
     plt.ylabel('Loss')
     plt.tight_layout(pad=0.5)
     plt.show()
+    # np.savetxt(f'{args.model}_head{args.head_num}_KQdim{args.KQ_dim}_P{args.trainset_size}_N{args.seq_len}_seed{args.seed}.txt', results['Ls'])

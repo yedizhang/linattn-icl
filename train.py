@@ -20,11 +20,15 @@ def creat_network(args):
         model = LinTransformer(args.in_dim, args.out_dim).to(device)
     elif args.model == 'mlp':
         model = MLP(args.in_dim, args.out_dim).to(device)
+    print(model)
     return model
 
 
 def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubic_feat=False):
     x = np.random.multivariate_normal(np.zeros(in_dim), cov, size=num_samples*seq_len)
+    Sigma_inv = np.linalg.inv(np.cov(x.T))
+    eigval, eigvec = np.linalg.eigh(np.linalg.inv(Sigma_inv))
+    vis_matrix([Sigma_inv, np.diag(eigval), eigvec], 'Covariance of x')
     x = torch.tensor(np.reshape(x, (num_samples, seq_len, in_dim))).float()
     x = x - torch.mean(x, dim=0, keepdim=True)
     if mode == 'bursty':
@@ -42,10 +46,14 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
     if cubic_feat:
         XX = torch.bmm(seq.transpose(1, 2), seq)
         beta_c = XX[:,:in_dim,[-1]]
+        # beta_c = XX[:,:,[-1]]
         x_q = seq[:,[-1],:in_dim]
         X_feat = torch.bmm(beta_c, x_q)
         seq = torch.flatten(X_feat, start_dim=1)
-        vis_matrix(np.cov(seq.T))
+        # E_zz = np.cov(seq.T)
+        # E_yz = seq.T @ targets[:,-1,in_dim:] / seq.shape[0]
+        # vis_matrix(E_zz)
+        # vis_matrix(np.array(E_yz))
     return seq.to(device), targets.to(device)
 
 
@@ -64,7 +72,6 @@ def gen_dataset(args):
         data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     print("Trainset shape:", data['x'].shape, data['y'].shape)
     print("Input cov eigvals:", np.linalg.eigvals(cov))
-    vis_matrix(cov)
     return data
 
 
@@ -85,17 +92,16 @@ def train(model, data, args):
             results['Eg_icl'][t] = mse(data["y_icl"], model(data["x_icl"]), args.in_dim)
         if t % 2000 == 0:
             print(f"Epoch [{t}/{args.epoch}], Loss: {loss.item():.4f}")
-            vis_weight(args, model.parameters())
+            vis_weight(args, model.parameters(), t)
 
         loss.backward()
         optimizer.step()
     
-    vis_loss(results)
+    vis_loss(args, results)
 
 
 if __name__ == "__main__":
     args = config().parse_args()
     data = gen_dataset(args)
     model = creat_network(args)
-    print(model)
     train(model, data, args)
