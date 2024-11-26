@@ -1,9 +1,21 @@
 import numpy as np
+import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 plt.rc('font', family="Arial")
 plt.rcParams['mathtext.fontset'] = 'stix'
 plt.rcParams['font.size'] = '14'
+
+
+def whiten(X):
+    X = X - torch.mean(X, dim=0, keepdim=True)
+    for o in range(X.shape[-1]):
+        X_o = X[:,:,o]
+        cov_matrix = torch.cov(X_o.T)
+        eigvals, eigvecs = torch.linalg.eigh(cov_matrix)
+        whitening_matrix = eigvecs @ torch.diag(1.0 / np.sqrt(eigvals)) @ eigvecs.T
+        X[:,:,o] = X_o @ whitening_matrix.T
+    return X
 
 
 def mse(y, y_hat, in_dim):

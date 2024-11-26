@@ -35,7 +35,7 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
         y = torch.matmul(x, w)
     elif mode == 'icl':
         w_ic = torch.normal(0, 1, size=(num_samples, in_dim, out_dim))
-        w_ic = w_ic - torch.mean(w_ic, dim=0, keepdim=True)
+        w_ic = whiten(w_ic)
         y = torch.einsum('nli,nio->nlo', x, w_ic)
     elif mode == 'iwl':
         y = torch.randn(num_samples, seq_len, out_dim)
