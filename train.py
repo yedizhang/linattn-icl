@@ -102,6 +102,9 @@ def train(model, data, args):
 
 if __name__ == "__main__":
     args = config().parse_args()
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
     data = gen_dataset(args)
     model = creat_network(args)
     train(model, data, args)

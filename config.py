@@ -20,5 +20,7 @@ def config():
     parser.add_argument("--KQ_dim", type=int, default=16, help='dimension of W_K and W_Q matrices')
     parser.add_argument("--head_num", type=int, default=1, help='number of heads')
 
+    parser.add_argument("--seed", type=int, default=0, help='random seed')
+
     print(parser.parse_args(), '\n')
     return parser
