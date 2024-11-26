@@ -7,8 +7,6 @@ from net import *
 from utils import *
 from config import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.manual_seed(0)
-np.random.seed(0)
 
 
 def creat_network(args):
