@@ -7,6 +7,16 @@ plt.rcParams['mathtext.fontset'] = 'stix'
 plt.rcParams['font.size'] = '14'
 
 
+def gen_cov(eigval, rand_cov):
+    if not rand_cov:
+        Lambda = np.diag(eigval)
+    else:
+        Q, _ = np.linalg.qr(np.random.randn(len(eigval), len(eigval)))  # generate a random orthogonal matrix
+        Lambda = Q @ np.diag(eigval) @ Q.T
+    Lambda = Lambda / np.trace(Lambda)
+    return Lambda
+
+
 def whiten(X):
     X = X - torch.mean(X, dim=0, keepdim=True)
     for o in range(X.shape[-1]):

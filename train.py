@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from scipy.stats import invwishart
 from net import *
 from utils import *
 from config import *
@@ -57,13 +56,8 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
 
 def gen_dataset(args):
     data = {}
-    if args.rand_cov:
-        w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
-        cov = invwishart.rvs(df=args.in_dim+2, scale=np.eye(args.in_dim))
-    else:
-        w = torch.ones(args.in_dim, args.out_dim)
-        cov = np.eye(args.in_dim)
-    cov = cov / np.trace(cov)
+    w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
+    cov = gen_cov(np.arange(args.in_dim)+1, args.rand_cov)
     data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     if args.testset_size != 0:
         data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'iwl', args.cubic_feat)
