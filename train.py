@@ -11,13 +11,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def creat_network(args):
     if args.model == 'attn_KQ':
-        model = LinAttention_KQ(args.in_dim, args.out_dim, args.head_num).to(device)
+        model = LinAttention_KQ(args.in_dim, args.out_dim, args.head_num, args.init).to(device)
     elif args.model == 'attn':
-        model = LinAttention(args.in_dim, args.out_dim, args.head_num, args.KQ_dim).to(device)
+        model = LinAttention(args.in_dim, args.out_dim, args.head_num, args.KQ_dim, args.init).to(device)
     elif args.model == 'transformer':
-        model = LinTransformer(args.in_dim, args.out_dim).to(device)
+        model = LinTransformer(args.in_dim, args.out_dim, args.KQ_dim, args.init).to(device)
     elif args.model == 'mlp':
-        model = MLP(args.in_dim, args.out_dim).to(device)
+        model = MLP(args.in_dim, args.out_dim, args.head_num, args.init).to(device)
     print(model)
     return model
 
