@@ -23,9 +23,9 @@ def creat_network(args):
 
 def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubic_feat=False):
     x = np.random.multivariate_normal(np.zeros(in_dim), cov, size=num_samples*seq_len)
-    Sigma_inv = np.linalg.inv(np.cov(x.T))
-    eigval, eigvec = np.linalg.eigh(np.linalg.inv(Sigma_inv))
-    vis_matrix([Sigma_inv, np.diag(eigval), eigvec], 'Covariance of x')
+    Lambda_inv = np.linalg.inv(np.cov(x.T))
+    eigval, eigvec = np.linalg.eigh(np.linalg.inv(Lambda_inv))
+    vis_matrix([Lambda_inv, np.diag(eigval), eigvec.T], 'Covariance of x')
     x = torch.tensor(np.reshape(x, (num_samples, seq_len, in_dim))).float()
     x = x - torch.mean(x, dim=0, keepdim=True)
     if mode == 'bursty':
@@ -47,7 +47,7 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
         x_q = seq[:,[-1],:in_dim]
         X_feat = torch.bmm(beta_c, x_q)
         seq = torch.flatten(X_feat, start_dim=1)
-        # E_zz = np.cov(seq.T)
+        # E_zz = np.cov(seq, rowvar=False)
         # E_yz = seq.T @ targets[:,-1,in_dim:] / seq.shape[0]
         # vis_matrix(E_zz)
         # vis_matrix(np.array(E_yz))
@@ -63,7 +63,7 @@ def gen_dataset(args):
         data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'iwl', args.cubic_feat)
         data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     print("Trainset shape:", data['x'].shape, data['y'].shape)
-    print("Input cov eigvals:", np.linalg.eigvals(cov))
+    print("Eigval of Lambda:", np.linalg.eigvals(cov))
     return data
 
 
