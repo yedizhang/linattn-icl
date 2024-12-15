@@ -57,7 +57,7 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
 def gen_dataset(args):
     data = {}
     w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
-    cov = gen_cov(np.arange(args.in_dim)+1, args.rand_cov)
+    cov = gen_cov(args)
     data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
     if args.testset_size != 0:
         data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'iwl', args.cubic_feat)

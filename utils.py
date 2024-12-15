@@ -7,10 +7,11 @@ plt.rcParams['mathtext.fontset'] = 'stix'
 plt.rcParams['font.size'] = '14'
 
 
-def gen_cov(eigval, rand_cov):
-    if not rand_cov:
-        Lambda = np.diag(eigval)
+def gen_cov(args):
+    if args.white_cov:
+        Lambda = np.eye(args.in_dim)
     else:
+        eigval = np.arange(args.in_dim)+1
         Q, _ = np.linalg.qr(np.random.randn(len(eigval), len(eigval)))  # generate a random orthogonal matrix
         Lambda = Q @ np.diag(eigval) @ Q.T
     Lambda = Lambda / np.trace(Lambda)
@@ -41,6 +42,8 @@ def vis_matrix(M, t=0):
         thresh = np.max(np.abs(M))
         plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
         plt.colorbar()
+        plt.gca().set_xticks([])
+        plt.gca().set_yticks([])
     else:
         num = len(M)
         fig, ax = plt.subplots(nrows=1, ncols=num)
