@@ -86,8 +86,8 @@ def vis_loss(args, results):
     plt.figure(figsize=(4, 3))
     plt.plot(results['Ls'], c='k', lw=2, label='train')
     if results['Eg_iwl'][0] != 0:
-        plt.plot(results['Eg_iwl'], c=cmap(0.85), lw=2, label='test IC')
-        plt.plot(results['Eg_icl'], c=cmap(0.15), lw=2, label='test IW')
+        plt.plot(results['Eg_iwl'], c=cmap(0.85), lw=2, label='test IW')
+        plt.plot(results['Eg_icl'], c=cmap(0.15), lw=2, label='test IC')
         plt.legend(frameon=False)
     plt.xlim([0, len(results['Ls'])])
     plt.ylim([0, np.max(results['Ls'])+0.1])
