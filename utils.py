@@ -39,6 +39,7 @@ def mse(y, y_hat, in_dim):
 
 def vis_matrix(M, t=0):
     if not isinstance(M, list):
+        plt.figure(figsize=(3, 3))
         thresh = np.max(np.abs(M))
         plt.imshow(M, cmap='RdBu', vmin=-thresh, vmax=thresh)
         plt.colorbar()
@@ -78,13 +79,16 @@ def vis_weight(args, params, t=0):
 
 
 def vis_loss(args, results):
+    import matplotlib 
+    cmap = matplotlib.cm.get_cmap('RdBu')
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
+    plt.plot(results['Ls'], c='k', lw=2, label='train')
     if results['Eg_iwl'][0] != 0:
-        plt.plot(results['Eg_iwl'], c='b')
-        plt.plot(results['Eg_icl'], c='r')
-    plt.plot(results['Ls'], c='k', lw=2)
+        plt.plot(results['Eg_iwl'], c=cmap(0.85), lw=2, label='test IC')
+        plt.plot(results['Eg_icl'], c=cmap(0.15), lw=2, label='test IW')
+        plt.legend(frameon=False)
     plt.xlim([0, len(results['Ls'])])
     plt.ylim([0, np.max(results['Ls'])+0.1])
     plt.xlabel('Epoch')
