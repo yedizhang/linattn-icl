@@ -93,12 +93,13 @@ class LinAttention(nn.Module):
         return output
 
     def _init_weights(self, init):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=init)
-                if m.weight.shape[0]==self.in_dim+self.out_dim:  # value matrix
-                    nn.init.constant_(m.weight, 0)
-                    nn.init.constant_(m.weight[self.in_dim:,self.in_dim:], init)
+        for name, layer in self.named_modules():
+            if isinstance(layer, nn.Linear):
+                nn.init.normal_(layer.weight, mean=0, std=init)
+                if name.startswith("key"):
+                    nn.init.constant_(layer.weight[:,-1], 0)
+                if name.startswith("value"):
+                    nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
 
 
 class LinTransformer(nn.Module):
