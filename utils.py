@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 plt.rc('font', family="Arial")
-plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.size'] = '14'
 
 
@@ -19,6 +19,7 @@ def gen_cov(args):
 
 
 def whiten(X):
+    # enforce X have zero mean and identity covariance
     X = X - torch.mean(X, dim=0, keepdim=True)
     for o in range(X.shape[-1]):
         X_o = X[:,:,o]
