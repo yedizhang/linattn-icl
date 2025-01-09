@@ -21,22 +21,27 @@ def creat_network(args):
     return model
 
 
-def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubic_feat=False):
+def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, icl=1, cubic_feat=False):
     x = np.random.multivariate_normal(np.zeros(in_dim), cov, size=num_samples*seq_len)
     Lambda_inv = np.linalg.inv(np.cov(x.T))
     eigval, eigvec = np.linalg.eigh(np.linalg.inv(Lambda_inv))
     vis_matrix([Lambda_inv, np.diag(eigval), eigvec.T], 'Covariance of x')
     x = torch.tensor(np.reshape(x, (num_samples, seq_len, in_dim))).float()
     x = x - torch.mean(x, dim=0, keepdim=True)
-    if mode == 'bursty':
-        y = torch.matmul(x, w)
-    elif mode == 'icl':
-        w_ic = torch.normal(0, 1, size=(num_samples, in_dim, out_dim))
+
+    w_ic = torch.normal(0, 1, size=(num_samples, in_dim, out_dim))
+    if icl == 1:
         w_ic = whiten(w_ic)
         y = torch.einsum('nli,nio->nlo', x, w_ic)
-    elif mode == 'iwl':
-        y = torch.randn(num_samples, seq_len, out_dim)
+    elif icl == 0:
+        y = torch.normal(0, 1, size=(num_samples, seq_len, out_dim))
         y[:,-1,:] = torch.matmul(x[:,-1,:], w)
+    else:
+        icl_num = int(num_samples * icl)
+        w_ic[:icl_num] = whiten(w_ic[:icl_num])
+        w_ic[icl_num:] = w
+        y = torch.einsum('nli,nio->nlo', x, w_ic)    
+
     seq = torch.cat((x, y), dim=2)  # shape [num_samples, seq_len, in_dim+out_dim]
     targets = seq.clone()
     seq[:,[-1],in_dim:] = 0
@@ -51,17 +56,19 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, mode='bursty', cubi
         # E_yz = seq.T @ targets[:,-1,in_dim:] / seq.shape[0]
         # vis_matrix(E_zz)
         # vis_matrix(np.array(E_yz))
+        # np.savetxt('linreg.txt', np.linalg.inv(E_zz)@np.array(E_yz))
     return seq.to(device), targets.to(device)
 
 
 def gen_dataset(args):
     data = {}
     w = torch.normal(0, 1, size=(args.in_dim, args.out_dim))
+    w = w * args.in_dim**0.5 / torch.norm(w)
     cov = gen_cov(args)
-    data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
+    data['x'], data['y'] = gen_data_(args.trainset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, args.icl, args.cubic_feat)
     if args.testset_size != 0:
-        data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'iwl', args.cubic_feat)
-        data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 'icl', args.cubic_feat)
+        data['x_iwl'], data['y_iwl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 0, args.cubic_feat)
+        data['x_icl'], data['y_icl'] = gen_data_(args.testset_size, args.seq_len, args.in_dim, args.out_dim, cov, w, 1, args.cubic_feat)
     print("Trainset shape:", data['x'].shape, data['y'].shape)
     print("Eigval of Lambda:", np.linalg.eigvals(cov))
     return data
