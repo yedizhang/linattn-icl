@@ -95,7 +95,7 @@ class LinAttention(nn.Module):
     def _init_weights(self, init):
         for name, layer in self.named_modules():
             if isinstance(layer, nn.Linear):
-                nn.init.normal_(layer.weight, mean=0, std=init)
+                nn.init.normal_(layer.weight, mean=0, std=init/(torch.numel(layer.weight)**0.5))
                 if name.startswith("key"):
                     nn.init.constant_(layer.weight[:,-1], 0)
                 if name.startswith("value"):
