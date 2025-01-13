@@ -11,7 +11,7 @@ def config():
     parser.add_argument("--trainset_size", type=int, default=1000, help='number of training samples')
     parser.add_argument("--testset_size", type=int, default=0, help='number of training samples')
     parser.add_argument("--white_cov", action="store_true", help='use a white input token covariance matrix')
-    parser.add_argument("--seq_len", type=int, default=20, help='sequence length')
+    parser.add_argument("--seq_len", type=int, default=32, help='sequence length')
     parser.add_argument("--in_dim", type=int, default=4, help='dimension of x')
     parser.add_argument("--out_dim", type=int, default=1, help='dimension of y')
     parser.add_argument("--cubic_feat", action="store_true", help='map X to cubic features z')
