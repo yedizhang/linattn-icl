@@ -3,13 +3,13 @@ import argparse
 def config():
     parser = argparse.ArgumentParser()
     # training
-    parser.add_argument("--epoch", type=int, default=4001, help='number of epochs')
+    parser.add_argument("--epoch", type=int, default=6001, help='number of epochs')
     parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
-    parser.add_argument("--seed", type=int, default=0, help='random seed')
+    parser.add_argument("--seed", type=int, default=10, help='random seed')
 
     # data set
     parser.add_argument("--icl", type=float, default=1, help='portion of training sequences with a random task vector (icl=1 is a purely icl task)')
-    parser.add_argument("--trainset_size", type=int, default=1000, help='number of training samples')
+    parser.add_argument("--trainset_size", type=int, default=5000, help='number of training samples')
     parser.add_argument("--testset_size", type=int, default=0, help='number of training samples')
     parser.add_argument("--white_cov", action="store_true", help='use a white input token covariance matrix')
     parser.add_argument("--seq_len", type=int, default=32, help='sequence length')
