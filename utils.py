@@ -81,7 +81,7 @@ def vis_weight(args, params, t=0):
 
 def vis_loss(args, results):
     import matplotlib 
-    cmap = matplotlib.cm.get_cmap('RdBu')
+    cmap = matplotlib.colormaps['RdBu']
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
