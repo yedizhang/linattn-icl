@@ -99,6 +99,7 @@ class LinAttention(nn.Module):
                 if name.startswith("key"):
                     nn.init.constant_(layer.weight[:,-1], 0)
                 if name.startswith("value"):
+                    nn.init.normal_(layer.weight, mean=0, std=init)
                     nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
 
 
