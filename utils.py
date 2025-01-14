@@ -7,29 +7,6 @@ plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.size'] = '14'
 
 
-def gen_cov(args):
-    if args.white_cov:
-        Lambda = np.eye(args.in_dim)
-    else:
-        eigval = np.arange(args.in_dim)+1
-        Q, _ = np.linalg.qr(np.random.randn(len(eigval), len(eigval)))  # generate a random orthogonal matrix
-        Lambda = Q @ np.diag(eigval) @ Q.T
-    Lambda = Lambda / np.trace(Lambda)
-    return Lambda
-
-
-def whiten(X):
-    # enforce X have zero mean and identity covariance
-    X = X - torch.mean(X, dim=0, keepdim=True)
-    for o in range(X.shape[-1]):
-        X_o = X[:,:,o]
-        cov_matrix = torch.cov(X_o.T)
-        eigvals, eigvecs = torch.linalg.eigh(cov_matrix)
-        whitening_matrix = eigvecs @ torch.diag(1.0 / np.sqrt(eigvals)) @ eigvecs.T
-        X[:,:,o] = X_o @ whitening_matrix.T
-    return X
-
-
 def mse(y, y_hat, in_dim):
     if y.dim() == 3:
         y = y[:,-1,in_dim:]
