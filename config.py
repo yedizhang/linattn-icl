@@ -5,6 +5,7 @@ def config():
     # training
     parser.add_argument("--epoch", type=int, default=4001, help='number of epochs')
     parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
+    parser.add_argument("--seed", type=int, default=0, help='random seed')
 
     # data set
     parser.add_argument("--icl", type=float, default=1, help='portion of training sequences with a random task vector (icl=1 is a purely icl task)')
@@ -22,7 +23,9 @@ def config():
     parser.add_argument("--head_num", type=int, default=1, help='number of heads')
     parser.add_argument("--init", type=float, default=1e-3, help='initialization scale')
 
-    parser.add_argument("--seed", type=int, default=0, help='random seed')
+    # plotting and saving
+    parser.add_argument("--show", action="store_true", help='show matplotlib window if True; otherwise save txt')
+    parser.add_argument("--track_value", action="store_true", help='track the dynamics of value weight if True')
 
     print(parser.parse_args(), '\n')
     return parser

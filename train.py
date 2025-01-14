@@ -77,7 +77,8 @@ def gen_dataset(args):
 def train(model, data, args):
     results = {'Ls': np.zeros(args.epoch),
                'Eg_iwl': np.zeros(args.epoch),
-               'Eg_icl': np.zeros(args.epoch)}
+               'Eg_icl': np.zeros(args.epoch),
+               'V': np.zeros((args.epoch,args.head_num))}
     optimizer = optim.SGD(model.parameters(), lr=args.lr)
     for t in range(args.epoch):
         optimizer.zero_grad()
@@ -89,6 +90,10 @@ def train(model, data, args):
         if args.testset_size != 0:
             results['Eg_iwl'][t] = mse(data["y_iwl"], model(data["x_iwl"]), args.in_dim)
             results['Eg_icl'][t] = mse(data["y_icl"], model(data["x_icl"]), args.in_dim)
+        if args.track_value:
+            W = [param.data.cpu().detach().numpy() for param in model.parameters()]
+            for h in range(args.head_num):
+                results['V'][t,h] = W[2*args.head_num+h][-1,-1]
         if t % 2000 == 0:
             print(f"Epoch [{t}/{args.epoch}], Loss: {loss.item():.4f}")
             vis_weight(args, model.parameters(), t)

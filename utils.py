@@ -80,20 +80,31 @@ def vis_weight(args, params, t=0):
 
 
 def vis_loss(args, results):
-    import matplotlib 
-    cmap = matplotlib.colormaps['RdBu']
-    plt.rcParams['axes.spines.right'] = False
-    plt.rcParams['axes.spines.top'] = False
-    plt.figure(figsize=(4, 3))
-    plt.plot(results['Ls'], c='k', lw=2, label='train')
-    if results['Eg_iwl'][0] != 0:
-        plt.plot(results['Eg_iwl'], c=cmap(0.85), lw=2, label='test IW')
-        plt.plot(results['Eg_icl'], c=cmap(0.15), lw=2, label='test IC')
-        plt.legend(frameon=False)
-    plt.xlim([0, len(results['Ls'])])
-    plt.ylim([0, np.max(results['Ls'])+0.1])
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.tight_layout(pad=0.5)
-    plt.show()
-    # np.savetxt(f'{args.model}_head{args.head_num}_KQdim{args.KQ_dim}_P{args.trainset_size}_N{args.seq_len}_seed{args.seed}.txt', results['Ls'])
+    if args.show:
+        import matplotlib 
+        cmap = matplotlib.colormaps['RdBu']
+        plt.rcParams['axes.spines.right'] = False
+        plt.rcParams['axes.spines.top'] = False
+        plt.figure(figsize=(4, 3))
+        plt.plot(results['Ls'], c='k', lw=2, label='train')
+        if results['Eg_iwl'][0] != 0:
+            plt.plot(results['Eg_iwl'], c=cmap(0.85), lw=2, label='test IW')
+            plt.plot(results['Eg_icl'], c=cmap(0.15), lw=2, label='test IC')
+            plt.legend(frameon=False)
+        if results['V'][0,0] != 0:
+            for h in range(args.head_num):
+                plt.plot(results['V'][:,h])
+        plt.xlim([0, len(results['Ls'])])
+        plt.ylim([0, np.max(results['Ls'])+0.1])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.tight_layout(pad=0.5)
+        plt.show()
+    else:
+        file_id = f'{args.model}_head{args.head_num}_D{args.in_dim}_R{args.KQ_dim}_P{args.trainset_size}_N{args.seq_len}_seed{args.seed}'
+        if results['Eg_iwl'][0] != 0:
+            np.savetxt(f'{file_id}_test.txt', np.stack((results['Ls'], results['Eg_iwl'], results['Eg_icl']), axis=1))
+        elif results['V'][0,0] != 0:
+            np.savetxt(f'{file_id}_value.txt', np.hstack((results['Ls'][:,np.newaxis], results['V'])))
+        else:
+            np.savetxt(f'{file_id}.txt', results['Ls'])
