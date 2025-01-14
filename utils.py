@@ -39,7 +39,7 @@ def vis_matrix(M, t=0):
 
 def vis_weight(args, params, t=0):
     W = [param.data.cpu().detach().numpy() for param in params]
-    if args.model == 'attn':
+    if args.model == 'attnS':
         if args.head_num == 1:
             KQ = W[0].T @ W[args.head_num]
             V = W[-1]
@@ -47,7 +47,7 @@ def vis_weight(args, params, t=0):
             V = np.sum(W[2*args.head_num:], axis=0)
             KQ = np.array(W[:args.head_num]).squeeze().T @ np.array(W[args.head_num:2*args.head_num]).squeeze()
         vis_matrix([np.array(W[:args.head_num]).squeeze(), np.array(W[args.head_num:2*args.head_num]).squeeze()], t)
-    elif args.model == 'attn_KQ':
+    elif args.model == 'attnM':
         KQ = W[0].T
         V = W[-1]
     elif args.model == 'mlp':

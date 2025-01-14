@@ -20,9 +20,9 @@ class MLP(nn.Module):
                 nn.init.normal_(m.weight, mean=0, std=init)
 
 
-class LinAttention_KQ(nn.Module):
+class LinAttention_merge(nn.Module):
     def __init__(self, in_dim, out_dim, head_num, init):
-        super(LinAttention_KQ, self).__init__()       
+        super(LinAttention_merge, self).__init__()       
         self.KQ = nn.ModuleList([
             nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
             for _ in range(head_num)
