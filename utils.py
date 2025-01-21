@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 plt.rc('font', family="Arial")
@@ -80,7 +79,7 @@ def vis_loss(args, results):
     else:
         file_id = f'{args.model}_head{args.head_num}_D{args.in_dim}_R{args.KQ_dim}_P{args.trainset_size}_N{args.seq_len}_seed{args.seed}'
         if results['Eg_iwl'][0] != 0:
-            np.savetxt(f'{file_id}_test.txt', np.stack((results['Ls'], results['Eg_iwl'], results['Eg_icl']), axis=1))
+            np.savetxt(f'{file_id}_icl{args.icl}.txt', np.stack((results['Ls'], results['Eg_iwl'], results['Eg_icl']), axis=1))
         elif results['V'][0,0] != 0:
             np.savetxt(f'{file_id}_value.txt', np.hstack((results['Ls'][:,np.newaxis], results['V'])))
         else:

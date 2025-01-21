@@ -45,7 +45,6 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, icl=1, cubic_feat=F
         y[:,-1,:] = torch.matmul(x[:,-1,:], w)
     else:
         icl_num = int(num_samples * icl)
-        w_ic[:icl_num] = whiten(w_ic[:icl_num])
         w_ic[icl_num:] = w
         y = torch.einsum('nli,nio->nlo', x, w_ic)    
 
