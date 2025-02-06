@@ -15,18 +15,18 @@ Python 3 dependencies:
 
 We consider the in-context linear regression task ([Garg et al., 2022](https://arxiv.org/abs/2208.01066); [Zhang et al., 2024](https://www.jmlr.org/papers/v25/23-1042.html)). The input is
 $$
-\bold X = \begin{bmatrix}
-\bold x_1 & \bold x_2  & \cdots & \bold x_N & \bold x_q \\
+\mathbf X = \begin{bmatrix}
+\mathbf x_1 & \mathbf x_2  & \cdots & \mathbf x_N & \mathbf x_q \\
 y_1 & y_2 & \cdots & y_N & 0
 \end{bmatrix} \in \mathbb R^{(D+1)\times(N+1)}
 $$
-where $\bold x \in \mathbb R^D$ and $N$ is the sequence length. The desired output is a linear map of the query input, $y_q = \bold w^\top \bold x_q$. The $y_n$ in context are generated as the same linear map, $y_n = \bold w^\top \bold x_n, n=1,\cdots,N$. Note that the vector $\bold w$, which we call the task vector, varies across different sequences and is independently sampled  from $\mathcal N(\bold 0,\bold I)$.
+where $\mathbf x \in \mathbb R^D$ and $N$ is the sequence length. The desired output is a linear map of the query input, $y_q = \mathbf w^\top \mathbf x_q$. The $y_n$ in context are generated as the same linear map, $y_n = \mathbf w^\top \mathbf x_n, n=1,\cdots,N$. Note that the vector $\mathbf w$, which we call the task vector, varies across different sequences and is independently sampled  from $\mathcal N(\mathbf 0,\mathbf I)$.
 
 ## Attention with Merged Key and Query
 
-Multi-head linear attention with the key and query matrices merged as a single matrix ${\bold W^K}^\top \bold W^Q = \bold W^{KQ}$, defined as
+Multi-head linear attention with the key and query matrices merged as a single matrix ${\mathbf W^K}^\top \mathbf W^Q = \mathbf W^{KQ}$, defined as
 $$
-\textsf{ATTN}_{\text M} (\bold X) = \bold X + \sum_{i=1}^H \frac1N \bold W^V_i \bold X \bold X^\top \bold W^{KQ}_i \bold X
+\textsf{ATTN}_{\text M} (\mathbf X) = \mathbf X + \sum_{i=1}^H \frac1N \mathbf W^V_i \mathbf X \mathbf X^\top \mathbf W^{KQ}_i \mathbf X
 $$
 Simulate a loss trajectory of $\textsf{ATTN}_{\text M}$
 
@@ -36,11 +36,11 @@ python train.py --model attnM --head 8 --init 1e-6 --show
 
 When trained on in-context linear regression tasks, the linear attention with merged key and query is equivalent to a 2-layer fully-connected linear networks with a set of cubic features as input
 $$
-\textsf{ATTN}_{\text M} (\bold X)_{D+1,N+1} = \textsf{MLP} (\bold z)
+\textsf{ATTN}_{\text M} (\mathbf X)_{D+1,N+1} = \textsf{MLP} (\mathbf z)
 $$
-where the cubic feature is $\bold z = \frac1N \sum_{n=1}^N y_n \bold x_n \bold x_q^\top$. 
+where the cubic feature is $\mathbf z = \frac1N \sum_{n=1}^N y_n \mathbf x_n \mathbf x_q^\top$. 
 
-If we train $\textsf{MLP} (\bold z)$ with the same dataset and initialization, the loss trajectory will be the same as that of $\textsf{ATTN}_{\text M}$.
+If we train $\textsf{MLP} (\mathbf z)$ with the same dataset and initialization, the loss trajectory will be the same as that of $\textsf{ATTN}_{\text M}$.
 
 ```bash
 python train.py --model mlp --cubic_feat --head 8 --init 1e-6 --show
@@ -50,7 +50,7 @@ python train.py --model mlp --cubic_feat --head 8 --init 1e-6 --show
 
 Multi-head linear attention with separate key and query, defined as
 $$
-\textsf{ATTN}_{\text S} (\bold X) = \bold X + \sum_{i=1}^H \frac1N \bold W^V_i \bold X \bold X^\top {\bold W^K_i}^\top \bold W^Q_i \bold X
+\textsf{ATTN}_{\text S} (\mathbf X) = \mathbf X + \sum_{i=1}^H \frac1N \mathbf W^V_i \mathbf X \mathbf X^\top {\mathbf W^K_i}^\top \mathbf W^Q_i \mathbf X
 $$
 
 ### Rank-One Key and Query
