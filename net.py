@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 
 
+def rand_weight(init, size, seed=7):
+    torch.manual_seed(seed)
+    return torch.randn(size) * init
+
+
 class MLP(nn.Module):
     def __init__(self, in_dim, out_dim, hid, init):
         super(MLP, self).__init__()
@@ -15,13 +20,21 @@ class MLP(nn.Module):
         return fc
 
     def _init_weights(self, init):
+        # W1 = rand_weight(init, (8, 16))
+        # W2 = rand_weight(init, (1, 8))
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, mean=0, std=init)
+                # with torch.no_grad():
+                #     if m.weight.shape[0] == 1:
+                #         m.weight.copy_(W2)
+                #     else:
+                #         m.weight.copy_(W1)
 
 
 class LinAttention_merge(nn.Module):
-    def __init__(self, in_dim, out_dim, head_num, init):
+    # linear attention with the key and query merged as a single matrix
+    def __init__(self, in_dim, out_dim, head_num, softmax, init):
         super(LinAttention_merge, self).__init__()       
         self.KQ = nn.ModuleList([
             nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
@@ -34,6 +47,7 @@ class LinAttention_merge(nn.Module):
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.head_num = head_num
+        self.softmax = softmax
         self._init_weights(init)
 
     def forward(self, x):
@@ -43,23 +57,34 @@ class LinAttention_merge(nn.Module):
             kq = self.KQ[i](x)  # (batch_size, seq_len, in_dim+out_dim)
             V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
             attention_scores = torch.bmm(x, kq.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+            if self.softmax:
+                attention_scores = torch.softmax(attention_scores, dim=-1)
             head_output = torch.bmm(attention_scores, V)
             multihead_output.append(head_output)
         output = sum(multihead_output)  # sum outputs from all heads (batch_size, seq_len, head_dim)
         return output
 
     def _init_weights(self, init):
+        # W1 = rand_weight(init, (8, 16))
+        # W2 = rand_weight(init, (1, 8))
+        # i, j = 0, 0
         for name, layer in self.named_modules():
             if isinstance(layer, nn.Linear):
                 nn.init.normal_(layer.weight, mean=0, std=init)
                 if name.startswith("KQ"):
                     nn.init.constant_(layer.weight[:self.in_dim,-1], 0)
+                    # with torch.no_grad():
+                    #     layer.weight[:4, :4] = W1[i].reshape(4,4)
+                    # i += 1
                 if name.startswith("value"):
                     nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
+                    # with torch.no_grad():
+                    #     layer.weight[-1, -1] = W2[:,j]
+                    # j += 1
 
 
 class LinAttention(nn.Module):
-    def __init__(self, in_dim, out_dim, head_num, KQ_dim, init):
+    def __init__(self, in_dim, out_dim, head_num, KQ_dim, softmax, init):
         super(LinAttention, self).__init__()
         self.key = nn.ModuleList([
             nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
@@ -77,6 +102,7 @@ class LinAttention(nn.Module):
         self.out_dim = out_dim
         self.head_num = head_num
         self.KQ_dim = KQ_dim
+        self.softmax = softmax
         self._init_weights(init)
 
     def forward(self, x):
@@ -87,6 +113,8 @@ class LinAttention(nn.Module):
             Q = self.query[i](x)  # (batch_size, seq_len, KQ_dim)
             V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
             attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+            if self.softmax:
+                attention_scores = torch.softmax(attention_scores, dim=-1)
             head_output = torch.bmm(attention_scores, V)
             multihead_output.append(head_output)
         output = sum(multihead_output)
