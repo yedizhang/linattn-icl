@@ -31,7 +31,7 @@ def train(model, data, args):
     for t in range(args.epoch):
         optimizer.zero_grad()
         outputs = model(data["x"])
-        if not args.cubic_feat:
+        if args.model != 'mlp':
             outputs = outputs[:,-1,args.in_dim:]
         loss = nn.MSELoss()(data["y"][:,-1,args.in_dim:], outputs)
         results['Ls'][t] = loss.item()
