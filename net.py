@@ -72,15 +72,15 @@ class LinAttention_merge(nn.Module):
             if isinstance(layer, nn.Linear):
                 nn.init.normal_(layer.weight, mean=0, std=init)
                 if name.startswith("KQ"):
-                    nn.init.constant_(layer.weight[:self.in_dim,-1], 0)
                     # with torch.no_grad():
                     #     layer.weight[:4, :4] = W1[i].reshape(4,4)
                     # i += 1
+                    nn.init.constant_(layer.weight[:self.in_dim,-1], 0)
                 if name.startswith("value"):
-                    nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
                     # with torch.no_grad():
                     #     layer.weight[-1, -1] = W2[:,j]
                     # j += 1
+                    nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
 
 
 class LinAttention(nn.Module):
