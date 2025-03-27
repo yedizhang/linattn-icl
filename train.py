@@ -22,6 +22,24 @@ def creat_network(args):
     return model
 
 
+def compute_loss(model, data, args):
+    if not args.vary_len:
+        outputs = model(data["x"])
+        if args.model != 'mlp':
+            outputs = outputs[:,-1,args.in_dim:]
+        loss = nn.MSELoss()(data["y"][:,-1,args.in_dim:], outputs)
+    else:
+        loss = 0
+        for n in range(2, args.seq_len+1):
+            seq = torch.clone(data["x"][:,:n,:])
+            seq[:,[-1],args.in_dim:] = 0
+            outputs = model(seq)
+            if args.model != 'mlp':
+                outputs = outputs[:,-1,args.in_dim:]
+            loss += nn.MSELoss()(data["y"][:,n-1,args.in_dim:], outputs)
+    return loss
+
+
 def train(model, data, args):
     results = {'Ls': np.zeros(args.epoch),
                'Eg_iwl': np.zeros(args.epoch),
@@ -30,10 +48,7 @@ def train(model, data, args):
     optimizer = optim.SGD(model.parameters(), lr=args.lr)
     for t in range(args.epoch):
         optimizer.zero_grad()
-        outputs = model(data["x"])
-        if args.model != 'mlp':
-            outputs = outputs[:,-1,args.in_dim:]
-        loss = nn.MSELoss()(data["y"][:,-1,args.in_dim:], outputs)
+        loss = compute_loss(model, data, args)
         results['Ls'][t] = loss.item()
         if args.testset_size != 0:
             results['Eg_iwl'][t] = mse(data["y_iwl"], model(data["x_iwl"]), args.in_dim)
