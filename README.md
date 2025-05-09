@@ -62,12 +62,12 @@ python train.py --model attnS --head 5 --init 1e-2 --epoch 10001 --lr 0.02 --sho
 ```
 ### Low-Rank Key and Query
 
-We vary the rank of the key and query weights and see how the loss trajectories differ from their rank-one counterpart. We set input token dimension $D=8$ and vary the rank (controlled by the `--KQ_dim` parser). The following commands generate the txt file of the loss curve. Add `--show` parser to display the loss curve.
+We vary the rank of the key and query weights and see how the loss trajectories differ from their rank-one counterpart. We set input token dimension $D=8$ and vary the rank (controlled by the `--rank` parser). The following commands generate the txt file of the loss curve. Add `--show` parser to display the loss curve.
 
 ```bash
 R="8 4 2 1"
 for r in $R; do
-  python train.py --model attnS --head 9 --KQ_dim "$r" --in_dim 8 --seq_len 32 --init 5e-3 --trainset_size 80000 --epoch 20001 --lr 0.02
+  python train.py --model attnS --head 9 --rank "$r" --in_dim 8 --seq_len 32 --init 5e-3 --trainset_size 80000 --epoch 20001 --lr 0.02
 done
 ```
 

@@ -84,14 +84,14 @@ class LinAttention_merge(nn.Module):
 
 
 class LinAttention(nn.Module):
-    def __init__(self, in_dim, out_dim, head_num, KQ_dim, softmax, init):
+    def __init__(self, in_dim, out_dim, head_num, rank, softmax, init):
         super(LinAttention, self).__init__()
         self.key = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
+            nn.Linear(in_dim+out_dim, rank, bias=False)
             for _ in range(head_num)
         ])
         self.query = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
+            nn.Linear(in_dim+out_dim, rank, bias=False)
             for _ in range(head_num)
         ])
         self.value = nn.ModuleList([
@@ -101,7 +101,7 @@ class LinAttention(nn.Module):
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.head_num = head_num
-        self.KQ_dim = KQ_dim
+        self.rank = rank
         self.softmax = softmax
         self._init_weights(init)
 
@@ -109,8 +109,8 @@ class LinAttention(nn.Module):
         # x: (num_samples, seq_len, in_dim)
         multihead_output = []
         for i in range(self.head_num):
-            K = self.key[i](x)    # (batch_size, seq_len, KQ_dim)
-            Q = self.query[i](x)  # (batch_size, seq_len, KQ_dim)
+            K = self.key[i](x)    # (batch_size, seq_len, rank)
+            Q = self.query[i](x)  # (batch_size, seq_len, rank)
             V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
             attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
             if self.softmax:
@@ -132,14 +132,14 @@ class LinAttention(nn.Module):
 
 
 class LinTransformer(nn.Module):
-    def __init__(self, in_dim, out_dim, KQ_dim, init):
+    def __init__(self, in_dim, out_dim, rank, init):
         super(LinTransformer, self).__init__()
-        self.query = nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
-        self.key = nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
+        self.query = nn.Linear(in_dim+out_dim, rank, bias=False)
+        self.key = nn.Linear(in_dim+out_dim, rank, bias=False)
         self.value = nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
 
-        self.fc1 = nn.Linear(in_dim+out_dim, KQ_dim, bias=False)
-        self.fc2 = nn.Linear(KQ_dim, in_dim+out_dim, bias=False)
+        self.fc1 = nn.Linear(in_dim+out_dim, rank, bias=False)
+        self.fc2 = nn.Linear(rank, in_dim+out_dim, bias=False)
 
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -148,8 +148,8 @@ class LinTransformer(nn.Module):
 
     def forward(self, x):
         # x: (num_samples, seq_len, in_dim + out_dim)
-        Q = self.query(x)  # (batch_size, seq_len, KQ_dim)
-        K = self.key(x)    # (batch_size, seq_len, KQ_dim)
+        Q = self.query(x)  # (batch_size, seq_len, rank)
+        K = self.key(x)    # (batch_size, seq_len, rank)
         V = self.value(x)
 
         # Compute attention (without softmax)

@@ -13,9 +13,9 @@ def creat_network(args):
     if args.model == 'attnM':
         model = LinAttention_merge(args.in_dim, args.out_dim, args.head_num, args.softmax, args.init).to(device)
     elif args.model == 'attnS':
-        model = LinAttention(args.in_dim, args.out_dim, args.head_num, args.KQ_dim, args.softmax, args.init).to(device)
+        model = LinAttention(args.in_dim, args.out_dim, args.head_num, args.rank, args.softmax, args.init).to(device)
     elif args.model == 'transformer':
-        model = LinTransformer(args.in_dim, args.out_dim, args.KQ_dim, args.init).to(device)
+        model = LinTransformer(args.in_dim, args.out_dim, args.rank, args.init).to(device)
     elif args.model == 'mlp':
         model = MLP(args.in_dim, args.out_dim, args.head_num, args.init).to(device)
     print(model)
