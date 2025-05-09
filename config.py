@@ -19,7 +19,7 @@ def config():
     parser.add_argument("--cubic_feat", action="store_true", help='map X to cubic features z')
     
     # network
-    parser.add_argument("--model", type=str, default='attnM', choices={'attnS', 'attnM', 'transformer', 'mlp'}, help='model type')
+    parser.add_argument("--model", type=str, default='attnM', choices={'attnS', 'attnM', 'mlp'}, help='model type')
     parser.add_argument("--softmax", action="store_true", help='softmax or linear (default) attention')
     parser.add_argument("--rank", type=int, default=1, help='rank of W_K and W_Q matrices')
     parser.add_argument("--head_num", type=int, default=1, help='number of heads')

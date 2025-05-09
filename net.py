@@ -32,10 +32,10 @@ class MLP(nn.Module):
                 #         m.weight.copy_(W1)
 
 
-class LinAttention_merge(nn.Module):
+class Attention_Merge(nn.Module):
     # linear attention with the key and query merged as a single matrix
     def __init__(self, in_dim, out_dim, head_num, softmax, init):
-        super(LinAttention_merge, self).__init__()       
+        super(Attention_Merge, self).__init__()       
         self.KQ = nn.ModuleList([
             nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
             for _ in range(head_num)
@@ -83,9 +83,9 @@ class LinAttention_merge(nn.Module):
                     nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
 
 
-class LinAttention(nn.Module):
+class Attention_Separate(nn.Module):
     def __init__(self, in_dim, out_dim, head_num, rank, softmax, init):
-        super(LinAttention, self).__init__()
+        super(Attention_Separate, self).__init__()
         self.key = nn.ModuleList([
             nn.Linear(in_dim+out_dim, rank, bias=False)
             for _ in range(head_num)
@@ -129,40 +129,3 @@ class LinAttention(nn.Module):
                 if name.startswith("value"):
                     nn.init.normal_(layer.weight, mean=0, std=init)
                     nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
-
-
-class LinTransformer(nn.Module):
-    def __init__(self, in_dim, out_dim, rank, init):
-        super(LinTransformer, self).__init__()
-        self.query = nn.Linear(in_dim+out_dim, rank, bias=False)
-        self.key = nn.Linear(in_dim+out_dim, rank, bias=False)
-        self.value = nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-
-        self.fc1 = nn.Linear(in_dim+out_dim, rank, bias=False)
-        self.fc2 = nn.Linear(rank, in_dim+out_dim, bias=False)
-
-        self.in_dim = in_dim
-        self.out_dim = out_dim
-
-        self._init_weights(init)
-
-    def forward(self, x):
-        # x: (num_samples, seq_len, in_dim + out_dim)
-        Q = self.query(x)  # (batch_size, seq_len, rank)
-        K = self.key(x)    # (batch_size, seq_len, rank)
-        V = self.value(x)
-
-        # Compute attention (without softmax)
-        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
-        attention = torch.bmm(attention_scores, V)  # (batch_size, seq_len, in_dim + out_dim)
-
-        x_skip = x + attention
-        fc = self.fc1(x_skip)
-        fc = self.fc2(fc)
-
-        return fc
-
-    def _init_weights(self, init):
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=init)
