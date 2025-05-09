@@ -34,7 +34,7 @@ class MLP(nn.Module):
 
 class Attention_Merge(nn.Module):
     # linear attention with the key and query merged as a single matrix
-    def __init__(self, in_dim, out_dim, head_num, softmax, init):
+    def __init__(self, in_dim, out_dim, head_num, init, softmax, vary_len):
         super(Attention_Merge, self).__init__()       
         self.KQ = nn.ModuleList([
             nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
@@ -48,10 +48,11 @@ class Attention_Merge(nn.Module):
         self.out_dim = out_dim
         self.head_num = head_num
         self.softmax = softmax
+        self.vary_len = vary_len
         self._init_weights(init)
 
     def forward(self, x):
-        # x: (batch_size, seq_len, in_dim+out_dim)        
+        # x: (batch_size, seq_len, in_dim+out_dim)
         multihead_output = []
         for i in range(self.head_num):
             kq = self.KQ[i](x)  # (batch_size, seq_len, in_dim+out_dim)
@@ -62,6 +63,8 @@ class Attention_Merge(nn.Module):
             head_output = torch.bmm(attention_scores, V)
             multihead_output.append(head_output)
         output = sum(multihead_output)  # sum outputs from all heads (batch_size, seq_len, head_dim)
+        if self.vary_len:
+            output /= x.shape[1]  # N = x.shape[1] is the context length
         return output
 
     def _init_weights(self, init):
@@ -84,7 +87,7 @@ class Attention_Merge(nn.Module):
 
 
 class Attention_Separate(nn.Module):
-    def __init__(self, in_dim, out_dim, head_num, rank, softmax, init):
+    def __init__(self, in_dim, out_dim, head_num, rank, init, softmax, vary_len):
         super(Attention_Separate, self).__init__()
         self.key = nn.ModuleList([
             nn.Linear(in_dim+out_dim, rank, bias=False)
@@ -103,6 +106,7 @@ class Attention_Separate(nn.Module):
         self.head_num = head_num
         self.rank = rank
         self.softmax = softmax
+        self.vary_len = vary_len
         self._init_weights(init)
 
     def forward(self, x):
@@ -118,6 +122,8 @@ class Attention_Separate(nn.Module):
             head_output = torch.bmm(attention_scores, V)
             multihead_output.append(head_output)
         output = sum(multihead_output)
+        if self.vary_len:
+            output /= x.shape[1]
         return output
 
     def _init_weights(self, init):

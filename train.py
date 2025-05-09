@@ -11,9 +11,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def creat_network(args):
     if args.model == 'attnM':
-        model = Attention_Merge(args.in_dim, args.out_dim, args.head_num, args.softmax, args.init).to(device)
+        model = Attention_Merge(args.in_dim, args.out_dim, args.head_num, args.init, args.softmax, args.vary_len).to(device)
     elif args.model == 'attnS':
-        model = Attention_Separate(args.in_dim, args.out_dim, args.head_num, args.rank, args.softmax, args.init).to(device)
+        model = Attention_Separate(args.in_dim, args.out_dim, args.head_num, args.rank, args.init, args.softmax, args.vary_len).to(device)
     elif args.model == 'mlp':
         model = MLP(args.in_dim, args.out_dim, args.head_num, args.init).to(device)
     print(model)
@@ -27,14 +27,14 @@ def compute_loss(model, data, args):
             outputs = outputs[:,-1,args.in_dim:]
         loss = nn.MSELoss()(data["y"][:,-1,args.in_dim:], outputs)
     else:
+        assert args.model != 'mlp', "MLP with varying context lengths is not implemented."
         loss = 0
         for n in range(2, args.seq_len+1):
             seq = torch.clone(data["x"][:,:n,:])
             seq[:,[-1],args.in_dim:] = 0
             outputs = model(seq)
-            if args.model != 'mlp':
-                outputs = outputs[:,-1,args.in_dim:]
-            loss += nn.MSELoss()(data["y"][:,n-1,args.in_dim:], outputs)
+            loss += nn.MSELoss()(data["y"][:,n-1,args.in_dim:], outputs[:,-1,args.in_dim:])
+        loss /= args.seq_len - 1
     return loss
 
 
