@@ -5,10 +5,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def gen_cov(args):
-    # define the input token covariance
     if args.white_cov:
+        # covariance matrix of the 'input' token x is white when given white_cov parser
         Lambda = np.eye(args.in_dim)
     else:
+        # default covariance matrix of the 'input' token x
+        # has eigenvalues lambda_d Lambda proportional to d
         eigval = np.arange(args.in_dim)+1
         Q, _ = np.linalg.qr(np.random.randn(len(eigval), len(eigval)))  # generate a random orthogonal matrix
         Lambda = Q @ np.diag(eigval) @ Q.T
@@ -16,16 +18,17 @@ def gen_cov(args):
     return Lambda
 
 
-def whiten(X):
-    # enforce X have zero mean and identity covariance
-    X = X - torch.mean(X, dim=0, keepdim=True)
-    for o in range(X.shape[-1]):
-        X_o = X[:,:,o]
-        cov_matrix = torch.cov(X_o.T)
+def whiten(W):
+    # shape of W: (trainset_size, in_dim, out_dim)
+    # enforce task vectors w to have zero mean and white covariance
+    W = W - torch.mean(W, dim=0, keepdim=True)
+    for o in range(W.shape[-1]):
+        W_o = W[:,:,o]
+        cov_matrix = torch.cov(W_o.T)
         eigvals, eigvecs = torch.linalg.eigh(cov_matrix)
         whitening_matrix = eigvecs @ torch.diag(1.0 / np.sqrt(eigvals)) @ eigvecs.T
-        X[:,:,o] = X_o @ whitening_matrix.T
-    return X
+        W[:,:,o] = W_o @ whitening_matrix.T
+    return W
 
 
 def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, icl=1, cubic_feat=False):
