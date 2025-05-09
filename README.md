@@ -92,7 +92,7 @@ done
 @InProceedings{yedi25icl,
   title = 	 {Training Dynamics of In-Context Learning in Linear Attention},
   author =       {Zhang, Yedi and Singh, Aaditya K. and Latham, Peter E. and Saxe, Andrew},
-  booktitle = 	 {Proceedings of the 42st International Conference on Machine Learning},
+  booktitle = 	 {Proceedings of the 42nd International Conference on Machine Learning},
   year = 	 {2025},
   url = 	 {https://arxiv.org/abs/2501.16265}
 }
