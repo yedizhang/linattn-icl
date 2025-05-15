@@ -6,7 +6,7 @@
 
 Python 3 dependencies:
 
-- pytorch
+- pytorch (tested with 2.3.1 and 1.11.0, other versions probably also work)
 - numpy
 - argparse
 - matplotlib
@@ -58,7 +58,7 @@ Multi-head linear attention with separate key and query, defined as
 Simulate a loss trajectory of rank-one $\textsf{ATTN}_{\text S}$
 
 ```bash
-python train.py --model attnS --head 5 --init 1e-2 --epoch 10001 --lr 0.02 --show
+python train.py --model attnS --head 5 --epoch 10001 --lr 0.02 --show
 ```
 ### Low-Rank Key and Query
 

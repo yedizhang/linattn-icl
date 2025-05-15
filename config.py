@@ -23,7 +23,7 @@ def config():
     parser.add_argument("--softmax", action="store_true", help='softmax or linear (default) attention')
     parser.add_argument("--rank", type=int, default=1, help='rank of W_K and W_Q matrices')
     parser.add_argument("--head_num", type=int, default=1, help='number of heads')
-    parser.add_argument("--init", type=float, default=1e-3, help='initialization scale')
+    parser.add_argument("--init", type=float, default=0.01, help='initialization scale')
 
     # plotting and saving
     parser.add_argument("--show", action="store_true", help='show matplotlib window if True; otherwise save txt')
