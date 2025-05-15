@@ -35,7 +35,7 @@ def gen_data_(num_samples, seq_len, in_dim, out_dim, cov, w, icl=1, cubic_feat=F
     x = np.random.multivariate_normal(np.zeros(in_dim), cov, size=num_samples*seq_len)
     Lambda_inv = np.linalg.inv(np.cov(x.T))
     eigval, eigvec = np.linalg.eigh(np.linalg.inv(Lambda_inv))
-    vis_matrix([Lambda_inv, np.diag(eigval), eigvec.T], 'Covariance of x')
+    # vis_matrix([Lambda_inv, np.diag(eigval), eigvec.T], 'Covariance of x')
     x = torch.tensor(np.reshape(x, (num_samples, seq_len, in_dim))).float()
     x = x - torch.mean(x, dim=0, keepdim=True)
 
