@@ -34,25 +34,27 @@ def vis_matrix(M, t=0):
             ax[n].set_yticks([])
         fig.suptitle(t)
     plt.tight_layout()
+    # plt.savefig(f't{t:05d}.jpg', dpi=300)
+    # plt.close()
     plt.show()
 
 def vis_weight(args, params, t=0):
     W = [param.data.cpu().detach().numpy() for param in params]
     if args.model == 'attnS':
         if args.head_num == 1:
-            KQ = W[0].T @ W[args.head_num]
+            KQ = W[0]
             V = W[-1]
         else:
-            V = np.sum(W[2*args.head_num:], axis=0)
-            KQ = np.array(W[:args.head_num]).squeeze().T @ np.array(W[args.head_num:2*args.head_num]).squeeze()
-        vis_matrix([np.array(W[:args.head_num]).squeeze(), np.array(W[args.head_num:2*args.head_num]).squeeze()], t)
+            KQ = np.array(W[:args.head_num]).squeeze()
+            V = np.concatenate(W[2*args.head_num:])
     elif args.model == 'attnM':
-        KQ = W[0].T
-        V = W[-1]
+        KQ = np.stack([A[:args.in_dim, :args.in_dim].ravel() for A in W[:args.head_num]]).T
+        V = np.stack([A[args.in_dim:, args.in_dim:].ravel() for A in W[args.head_num:]]).T
     elif args.model == 'mlp':
-        KQ = W[0].reshape(args.in_dim, args.in_dim)
+        KQ = W[0].T
         V = W[1]
-    vis_matrix([V,KQ], t)
+    vis_matrix([V,KQ], f'Epoch {t}')
+    # np.savetxt(f'{args.model}_H{args.head_num}_KQ_t{t:04d}.txt', KQ)
 
 
 def vis_loss(args, results):

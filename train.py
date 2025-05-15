@@ -57,8 +57,7 @@ def train(model, data, args):
                 results['V'][t,h] = W[2*args.head_num+h][-1,-1]
         if t % 2000 == 0:
             print(f"Epoch [{t}/{args.epoch}], Loss: {loss.item():.4f}")
-            if args.show:
-                vis_weight(args, model.parameters(), t)
+            # vis_weight(args, model.parameters(), t)
 
         loss.backward()
         optimizer.step()
