@@ -2,11 +2,6 @@ import torch
 import torch.nn as nn
 
 
-def rand_weight(init, size, seed=7):
-    torch.manual_seed(seed)
-    return torch.randn(size) * init
-
-
 class MLP(nn.Module):
     def __init__(self, in_dim, out_dim, hid, init):
         super(MLP, self).__init__()
@@ -20,118 +15,98 @@ class MLP(nn.Module):
         return fc
 
     def _init_weights(self, init):
-        # W1 = rand_weight(init, (8, 16))
-        # W2 = rand_weight(init, (1, 8))
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, mean=0, std=init)
-                # with torch.no_grad():
-                #     if m.weight.shape[0] == 1:
-                #         m.weight.copy_(W2)
-                #     else:
-                #         m.weight.copy_(W1)
 
 
 class Attention_Merge(nn.Module):
-    # linear attention with the key and query merged as a single matrix
+    # attention with the key and query merged as a single matrix
     def __init__(self, in_dim, out_dim, head_num, init, softmax, vary_len):
         super(Attention_Merge, self).__init__()       
-        self.KQ = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-            for _ in range(head_num)
-        ])
-        self.value = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-            for _ in range(head_num)
-        ])
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.head_num = head_num
         self.softmax = softmax
         self.vary_len = vary_len
+        self.embed_dim = in_dim + out_dim
+
+        self.kq = nn.Linear(self.embed_dim, head_num * self.embed_dim, bias=False)
+        self.value = nn.Linear(self.embed_dim, head_num * self.embed_dim, bias=False)
+
         self._init_weights(init)
 
     def forward(self, x):
-        # x: (batch_size, seq_len, in_dim+out_dim)
-        multihead_output = []
-        for i in range(self.head_num):
-            kq = self.KQ[i](x)  # (batch_size, seq_len, in_dim+out_dim)
-            V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
-            attention_scores = torch.bmm(x, kq.transpose(1, 2))  # (batch_size, seq_len, seq_len)
-            if self.softmax:
-                attention_scores = torch.softmax(attention_scores, dim=-1)
-            head_output = torch.bmm(attention_scores, V)
-            multihead_output.append(head_output)
-        output = sum(multihead_output)  # sum outputs from all heads (batch_size, seq_len, head_dim)
+        # x: (batch_size, seq_len, embed_dim)
+        B, N, D = x.shape
+        H = self.head_num
+        KQ = self.kq(x).view(B, N, H, D).transpose(1, 2)    # (B, H, N, D)
+        V = self.value(x).view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)
+        attn = torch.matmul(x.unsqueeze(1), KQ.transpose(-1, -2))
+        if self.softmax:
+            attn = torch.softmax(attn, dim=-1)
+        out = torch.matmul(attn, V)
+        out = out.sum(dim=1)  # (B, N, D)
         if self.vary_len:
-            output /= x.shape[1]  # N = x.shape[1] is the context length
-        return output
+            out = out / N
+        return out
 
     def _init_weights(self, init):
-        # W1 = rand_weight(init, (8, 16))
-        # W2 = rand_weight(init, (1, 8))
-        # i, j = 0, 0
-        for name, layer in self.named_modules():
+        for _, layer in self.named_modules():
             if isinstance(layer, nn.Linear):
                 nn.init.normal_(layer.weight, mean=0, std=init)
-                if name.startswith("KQ"):
-                    # with torch.no_grad():
-                    #     layer.weight[:4, :4] = W1[i].reshape(4,4)
-                    # i += 1
-                    nn.init.constant_(layer.weight[:self.in_dim,-1], 0)
-                if name.startswith("value"):
-                    # with torch.no_grad():
-                    #     layer.weight[-1, -1] = W2[:,j]
-                    # j += 1
-                    nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
+
+        for h in range(self.head_num):
+            # zero initial weights in merged W_kq
+            start_row = h * self.embed_dim
+            end_row = start_row + self.in_dim
+            nn.init.constant_(self.kq.weight[start_row:end_row, -1], 0)
+
+            # zero initial weights in W_v
+            row_idx = (h + 1) * self.embed_dim - 1
+            nn.init.constant_(self.value.weight[row_idx, :self.in_dim], 0)
 
 
 class Attention_Separate(nn.Module):
     def __init__(self, in_dim, out_dim, head_num, rank, init, softmax, vary_len):
         super(Attention_Separate, self).__init__()
-        self.key = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, rank, bias=False)
-            for _ in range(head_num)
-        ])
-        self.query = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, rank, bias=False)
-            for _ in range(head_num)
-        ])
-        self.value = nn.ModuleList([
-            nn.Linear(in_dim+out_dim, in_dim+out_dim, bias=False)
-            for _ in range(head_num)
-        ])
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.head_num = head_num
         self.rank = rank
         self.softmax = softmax
         self.vary_len = vary_len
+        self.embed_dim = in_dim + out_dim
+
+        self.key = nn.Linear(self.embed_dim, head_num * rank, bias=False)
+        self.query = nn.Linear(self.embed_dim, head_num * rank, bias=False)
+        self.value = nn.Linear(self.embed_dim, head_num * self.embed_dim, bias=False)
+
         self._init_weights(init)
 
     def forward(self, x):
-        # x: (num_samples, seq_len, in_dim)
-        multihead_output = []
-        for i in range(self.head_num):
-            K = self.key[i](x)    # (batch_size, seq_len, rank)
-            Q = self.query[i](x)  # (batch_size, seq_len, rank)
-            V = self.value[i](x)  # (batch_size, seq_len, in_dim+out_dim)
-            attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
-            if self.softmax:
-                attention_scores = torch.softmax(attention_scores, dim=-1)
-            head_output = torch.bmm(attention_scores, V)
-            multihead_output.append(head_output)
-        output = sum(multihead_output)
+        # x: (batch_size, seq_len, embed_dim)
+        B, N, D = x.shape
+        H = self.head_num
+        R = self.rank
+        K = self.key(x).view(B, N, H, R).transpose(1, 2)    # (B, H, N, R)
+        Q = self.query(x).view(B, N, H, R).transpose(1, 2)  # (B, H, N, R)
+        V = self.value(x).view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)        
+        attn = torch.matmul(Q, K.transpose(-1, -2))         # attention scores: (B, H, N, N)
+        if self.softmax:
+            attn = torch.softmax(attn, dim=-1)
+        out = torch.matmul(attn, V)  # multiply value matrix
+        out = out.sum(dim=1)         # sum over heads
         if self.vary_len:
-            output /= x.shape[1]
-        return output
+            out = out / N
+        return out
 
     def _init_weights(self, init):
-        for name, layer in self.named_modules():
+        for _, layer in self.named_modules():
             if isinstance(layer, nn.Linear):
-                nn.init.normal_(layer.weight, mean=0, std=init/(torch.numel(layer.weight)**0.5))
-                if name.startswith("key"):
-                    nn.init.constant_(layer.weight[:,-1], 0)
-                if name.startswith("value"):
-                    nn.init.normal_(layer.weight, mean=0, std=init)
-                    nn.init.constant_(layer.weight[-1,:self.in_dim], 0)
+                nn.init.normal_(layer.weight, mean=0, std=init/(layer.weight.numel() ** 0.5))
+        
+        nn.init.constant_(self.key.weight[:, -1], 0)
+        for h in range(1, 1+self.head_num):
+            row_idx = h*self.embed_dim - 1
+            nn.init.constant_(self.value.weight[row_idx, :self.in_dim], 0)

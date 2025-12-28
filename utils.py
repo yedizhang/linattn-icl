@@ -38,23 +38,14 @@ def vis_matrix(M, t=0):
     # plt.close()
     plt.show()
 
+
 def vis_weight(args, params, t=0):
     W = [param.data.cpu().detach().numpy() for param in params]
-    if args.model == 'attnS':
-        if args.head_num == 1:
-            KQ = W[0]
-            V = W[-1]
-        else:
-            KQ = np.array(W[:args.head_num]).squeeze()
-            V = np.concatenate(W[2*args.head_num:])
-    elif args.model == 'attnM':
-        KQ = np.stack([A[:args.in_dim, :args.in_dim].ravel() for A in W[:args.head_num]]).T
-        V = np.stack([A[args.in_dim:, args.in_dim:].ravel() for A in W[args.head_num:]]).T
-    elif args.model == 'mlp':
-        KQ = W[0].T
-        V = W[1]
-    vis_matrix([V,KQ], f'Epoch {t}')
-    # np.savetxt(f'{args.model}_H{args.head_num}_KQ_t{t:04d}.txt', KQ)
+    if args.model == 'attnM':
+        W[0] = np.reshape(W[0], (8, 25)).T
+        W[1] = np.reshape(W[1], (8, 25)).T
+    vis_matrix(W, f'Epoch {t}')
+    # np.savetxt(f'{args.model}_H{args.head_num}_KQ_t{t:04d}.txt', W[0])
 
 
 def vis_loss(args, results):
