@@ -42,8 +42,8 @@ def vis_matrix(M, t=0):
 def vis_weight(args, params, t=0):
     W = [param.data.cpu().detach().numpy() for param in params]
     if args.model == 'attnM':
-        W[0] = np.reshape(W[0], (8, 25)).T
-        W[1] = np.reshape(W[1], (8, 25)).T
+        W[0] = np.reshape(W[0], (args.head_num, -1)).T
+        W[1] = np.reshape(W[1], (args.head_num, -1)).T
     vis_matrix(W, f'Epoch {t}')
     # np.savetxt(f'{args.model}_H{args.head_num}_KQ_t{t:04d}.txt', W[0])
 
